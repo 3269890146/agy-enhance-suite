@@ -172,8 +172,9 @@ html[data-ag-we-active="1"][data-ag-we-glass="1"] :is(pre, .code-block, .monaco-
 /* 4. 右上角悬浮极简快捷按钮 */
 #ag-we-quick-btn {
   position: fixed;
-  top: 44px;
-  right: 14px;
+  top: 42px;
+  /* 预留 92px 右边距，避开顶部工具栏最右侧两个原生分屏/侧边栏切换按钮 */
+  right: 92px;
   z-index: 9990;
   display: inline-flex;
   align-items: center;
