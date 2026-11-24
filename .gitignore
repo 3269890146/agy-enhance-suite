@@ -1,0 +1,6 @@
+node_modules/
+data/
+server/start-daemon.vbs
+.install-root
+*.log
+.DS_Store

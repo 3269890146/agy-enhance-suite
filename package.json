@@ -1,0 +1,34 @@
+{
+  "name": "agy-wallpaper-engine",
+  "version": "1.0.0",
+  "description": "将本机 Steam Wallpaper Engine 动态壁纸与船板 Antigravity 主题补丁融合为一体：书卷液态毛玻璃 + WebWallGL 实时场景 + 原生双入口控制面板",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/3269890146/agy-wallpaper-engine",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3269890146/agy-wallpaper-engine.git"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "setup": "node install.mjs install",
+    "start": "node install.mjs start",
+    "stop": "node install.mjs stop",
+    "status": "node install.mjs status",
+    "sync-ui": "node install.mjs sync-ui",
+    "uninstall": "node install.mjs uninstall"
+  },
+  "keywords": [
+    "antigravity",
+    "wallpaper-engine",
+    "webwallgl",
+    "liquid-glass",
+    "theme",
+    "plugin"
+  ],
+  "dependencies": {
+    "webwallgl": "^3.0.3"
+  }
+}

@@ -1,0 +1,563 @@
+/* ============================================================================
+ * 船板补丁 × Wallpaper Engine 书卷液态玻璃扩展样式 (user/custom.css)
+ * 仅在 html[data-ag-we-active="1"] 时激活壁纸舞台与液态玻璃层，零改动 core/ 内核。
+ * ============================================================================ */
+
+:root {
+  --ag-we-main-opacity: 58%;
+  --ag-we-sidebar-opacity: 66%;
+  --ag-we-card-opacity: 74%;
+  --ag-we-blur: 18px;
+  --ag-we-saturate: 135%;
+  --ag-we-scrim-opacity: 24%;
+}
+
+/* 1. 壁纸舞台层（固定铺底、永不拦截宿主鼠标交互） */
+#ag-we-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#ag-we-stage .ag-we-poster,
+#ag-we-stage .ag-we-video,
+#ag-we-stage .ag-we-iframe,
+#ag-we-stage .ag-we-scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
+#ag-we-stage .ag-we-poster {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 1;
+  transition: opacity 360ms ease;
+}
+
+#ag-we-stage .ag-we-poster[data-hidden="1"] {
+  opacity: 0;
+}
+
+#ag-we-stage .ag-we-video {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+#ag-we-stage .ag-we-video[data-ready="1"] {
+  opacity: 1;
+}
+
+#ag-we-stage .ag-we-iframe {
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+#ag-we-stage .ag-we-iframe[data-ready="1"] {
+  opacity: 1;
+}
+
+#ag-we-stage .ag-we-scrim {
+  background-color: color-mix(in oklab, var(--ag-we-scrim-color, #F7F5F0) var(--ag-we-scrim-opacity, 24%), transparent);
+  transition: background-color 220ms ease;
+}
+
+/* 内置浏览器打孔状态避让：瞬间隐藏壁纸舞台，交还原生透明孔洞 */
+body:is([data-has-browser-hole="true"], [data-has-drawer-browser-hole="true"], [data-has-three-layer-browser-hole="true"]) #ag-we-stage {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 2. 书卷液态玻璃底色映射（自动跟随船板 5 套昼夜预设） */
+html[data-ag-we-active="1"]:not([data-ag-theme-mode="dark"]) {
+  --ag-we-base-bg: #FCFCFB;
+  --ag-we-base-sidebar: #F7F5F0;
+  --ag-we-base-card: #FFFFFF;
+  --ag-we-scrim-color: #F7F5F0;
+  --ag-we-glass-edge: rgba(31, 30, 29, 0.14);
+  --ag-we-glass-spec: rgba(255, 255, 255, 0.72);
+}
+
+html[data-ag-we-active="1"]:not([data-ag-theme-mode="dark"])[data-ag-preset="claude-desktop-purewhite"] {
+  --ag-we-base-bg: #FCFCFB;
+  --ag-we-base-sidebar: #FBFBF9;
+  --ag-we-base-card: #FFFFFF;
+  --ag-we-scrim-color: #FAF9F6;
+}
+
+html[data-ag-we-active="1"]:not([data-ag-theme-mode="dark"])[data-ag-preset="vintage-deep"] {
+  --ag-we-base-bg: #FBF9F5;
+  --ag-we-base-sidebar: #F1E8DC;
+  --ag-we-base-card: #F8F3EC;
+  --ag-we-scrim-color: #EFE6D8;
+  --ag-we-glass-edge: rgba(60, 45, 25, 0.18);
+  --ag-we-glass-spec: rgba(255, 250, 240, 0.65);
+}
+
+html[data-ag-we-active="1"][data-ag-theme-mode="dark"] {
+  --ag-we-base-bg: #070708;
+  --ag-we-base-sidebar: #111114;
+  --ag-we-base-card: #131317;
+  --ag-we-scrim-color: #050507;
+  --ag-we-glass-edge: rgba(255, 255, 255, 0.12);
+  --ag-we-glass-spec: rgba(255, 255, 255, 0.08);
+}
+
+html[data-ag-we-active="1"][data-ag-theme-mode="dark"][data-ag-dark-preset="claude-warm"] {
+  --ag-we-base-bg: #242320;
+  --ag-we-base-sidebar: #1B1A18;
+  --ag-we-base-card: #2A2925;
+  --ag-we-scrim-color: #161513;
+  --ag-we-glass-edge: rgba(243, 240, 228, 0.12);
+  --ag-we-glass-spec: rgba(243, 240, 228, 0.07);
+}
+
+/* 激活态下令 body 透出固定底层的 #ag-we-stage，但保持宿主根节点层级在壁纸之上 */
+html[data-ag-we-active="1"] body:not([data-has-browser-hole="true"]):not([data-has-drawer-browser-hole="true"]):not([data-has-three-layer-browser-hole="true"]) {
+  background-color: transparent !important;
+}
+
+html[data-ag-we-active="1"] #root {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3. 液态毛玻璃表面覆盖（启用 glass 时生效，保留打孔与代码阅读高对比度） */
+html[data-ag-we-active="1"][data-ag-we-glass="1"] body:not([data-has-browser-hole="true"]):not([data-has-drawer-browser-hole="true"]):not([data-has-three-layer-browser-hole="true"]) {
+  --background: color-mix(in oklab, var(--ag-we-base-bg) var(--ag-we-main-opacity, 58%), transparent) !important;
+  --content: color-mix(in oklab, var(--ag-we-base-bg) var(--ag-we-main-opacity, 58%), transparent) !important;
+  --sidebar: color-mix(in oklab, var(--ag-we-base-sidebar) var(--ag-we-sidebar-opacity, 66%), transparent) !important;
+  --shell: color-mix(in oklab, var(--ag-we-base-sidebar) var(--ag-we-sidebar-opacity, 66%), transparent) !important;
+  --vscode-sideBar-background: color-mix(in oklab, var(--ag-we-base-sidebar) var(--ag-we-sidebar-opacity, 66%), transparent) !important;
+  --card: color-mix(in oklab, var(--ag-we-base-card) var(--ag-we-card-opacity, 74%), transparent) !important;
+  --glass: color-mix(in oklab, var(--ag-we-base-card) var(--ag-we-card-opacity, 74%), transparent) !important;
+  --onyx-well: color-mix(in oklab, var(--ag-we-base-sidebar) var(--ag-we-sidebar-opacity, 66%), transparent) !important;
+  --onyx-frame: color-mix(in oklab, var(--ag-we-base-sidebar) calc(var(--ag-we-sidebar-opacity, 66%) + 6%), transparent) !important;
+  --onyx-raised: color-mix(in oklab, var(--ag-we-base-card) var(--ag-we-card-opacity, 74%), transparent) !important;
+}
+
+/* 侧栏、输入卡片、设置窗与浮层启用液态玻璃模糊与柔和高光 */
+html[data-ag-we-active="1"][data-ag-we-glass="1"] :is(.bg-sidebar, aside, [data-testid="settings-sidebar"]):not([data-has-browser-hole="true"]):not(.surface-opaque):not(.browser-hole-ancestor) {
+  backdrop-filter: blur(var(--ag-we-blur, 18px)) saturate(var(--ag-we-saturate, 135%));
+  -webkit-backdrop-filter: blur(var(--ag-we-blur, 18px)) saturate(var(--ag-we-saturate, 135%));
+}
+
+html[data-ag-we-active="1"][data-ag-we-glass="1"] :is(.surface-composer-card, [id="antigravity.agentSidePanelInputBox"] > div.bg-card) {
+  background-color: color-mix(in oklab, var(--ag-we-base-card) var(--ag-we-card-opacity, 74%), transparent) !important;
+  backdrop-filter: blur(var(--ag-we-blur, 18px)) saturate(var(--ag-we-saturate, 135%));
+  -webkit-backdrop-filter: blur(var(--ag-we-blur, 18px)) saturate(var(--ag-we-saturate, 135%));
+  box-shadow: inset 0 1px 0 var(--ag-we-glass-spec), 0 8px 28px -8px rgba(0, 0, 0, 0.16) !important;
+}
+
+html[data-ag-we-active="1"][data-ag-we-glass="1"] .settings-modal-container {
+  background-color: color-mix(in oklab, var(--ag-we-base-bg) calc(var(--ag-we-card-opacity, 74%) + 8%), transparent) !important;
+  backdrop-filter: blur(calc(var(--ag-we-blur, 18px) + 4px)) saturate(var(--ag-we-saturate, 135%));
+  -webkit-backdrop-filter: blur(calc(var(--ag-we-blur, 18px) + 4px)) saturate(var(--ag-we-saturate, 135%));
+}
+
+/* 代码块与编辑器保持高可读实底，保障代码对比度 */
+html[data-ag-we-active="1"][data-ag-we-glass="1"] :is(pre, .code-block, .monaco-editor, .xterm) {
+  background-color: color-mix(in oklab, var(--ag-we-base-card) 90%, transparent) !important;
+}
+
+/* 4. 右上角悬浮极简快捷按钮 */
+#ag-we-quick-btn {
+  position: fixed;
+  top: 44px;
+  right: 14px;
+  z-index: 9990;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ag-we-glass-edge, rgba(128, 128, 128, 0.25));
+  background-color: color-mix(in oklab, var(--ag-we-base-card, #1F1E1D) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  color: var(--foreground, #1F1E1D);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease, opacity 160ms ease;
+}
+
+#ag-we-quick-btn:hover {
+  border-color: var(--primary, #D97757);
+  transform: translateY(-1px);
+}
+
+#ag-we-quick-btn[hidden] {
+  display: none !important;
+}
+
+#ag-we-quick-btn .ag-we-q-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--primary, #D97757);
+  flex-shrink: 0;
+}
+
+#ag-we-quick-btn[data-paused="1"] .ag-we-q-dot {
+  background-color: var(--muted-foreground, #8C8B88);
+}
+
+/* 5. 系统设置「本地扩展 → 动态壁纸」Tab 集成与互斥控制 */
+.settings-modal-container[data-ag-we-tab-active="1"] [data-ag-native-settings-scroll="1"],
+.settings-modal-container[data-ag-we-tab-active="1"] #ag-token-analytics-panel {
+  display: none !important;
+}
+
+.settings-modal-container[data-ag-we-tab-active="1"] [data-testid^="settings-nav-item-"].bg-sidebar-secondary {
+  background-color: transparent !important;
+}
+
+.settings-modal-container[data-ag-we-tab-active="1"] #ag-token-nav-btn[data-active="1"] {
+  background-color: transparent !important;
+  font-weight: 400 !important;
+}
+
+#ag-we-nav-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#ag-we-nav-section .ag-we-nav-divider {
+  height: 1px;
+  margin: 0 10px 6px;
+  background-color: var(--ag-ta-border, var(--border));
+}
+
+#ag-we-nav-section .ag-we-nav-heading {
+  padding: 2px 10px 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ag-ta-muted, var(--muted-foreground));
+  user-select: none;
+}
+
+#ag-we-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ag-ta-fg, var(--foreground));
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+#ag-we-nav-btn:hover {
+  background-color: var(--ag-ta-hover, rgba(217, 119, 87, 0.08));
+}
+
+#ag-we-nav-btn[data-active="1"] {
+  background-color: var(--ag-ta-tint, rgba(217, 119, 87, 0.14));
+  font-weight: 600;
+}
+
+#ag-we-nav-btn .ag-we-nav-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--ag-ta-muted, var(--muted-foreground));
+}
+
+#ag-we-nav-btn[data-active="1"] .ag-we-nav-icon {
+  color: var(--ag-ta-primary, var(--primary));
+}
+
+/* 右侧动态壁纸设置面板 */
+#ag-we-settings-panel {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 24px 32px;
+  color: var(--ag-ta-fg, var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  background-color: transparent;
+}
+
+#ag-we-settings-panel[hidden] {
+  display: none !important;
+}
+
+#ag-we-settings-panel .ag-we-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#ag-we-settings-panel .ag-we-hdr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-right: 42px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ag-ta-border, var(--border));
+}
+
+#ag-we-settings-panel .ag-we-h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ag-ta-fg, var(--foreground));
+}
+
+#ag-we-settings-panel .ag-we-sub {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--ag-ta-muted, var(--muted-foreground));
+}
+
+#ag-we-settings-panel .ag-we-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+#ag-we-settings-panel .ag-we-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--ag-ta-border, var(--border));
+  background-color: var(--ag-ta-card, var(--card));
+  color: var(--ag-ta-fg, var(--foreground));
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+#ag-we-settings-panel .ag-we-btn:hover {
+  border-color: var(--primary, #D97757);
+  background-color: var(--ag-ta-hover, rgba(217, 119, 87, 0.08));
+}
+
+#ag-we-settings-panel .ag-we-btn[data-on="1"] {
+  border-color: var(--primary, #D97757);
+  background-color: color-mix(in oklab, var(--primary, #D97757) 16%, transparent);
+  font-weight: 600;
+}
+
+#ag-we-settings-panel .ag-we-box {
+  border-radius: 11px;
+  border: 1px solid var(--ag-ta-card-border, var(--border));
+  background-color: color-mix(in oklab, var(--ag-ta-card, var(--card)) 84%, transparent);
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+#ag-we-settings-panel .ag-we-box-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ag-ta-fg, var(--foreground));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#ag-we-settings-panel .ag-we-sliders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+@media (max-width: 720px) {
+  #ag-we-settings-panel .ag-we-sliders {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+#ag-we-settings-panel .ag-we-slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#ag-we-settings-panel .ag-we-slider-lbl {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ag-ta-muted, var(--muted-foreground));
+}
+
+#ag-we-settings-panel .ag-we-slider-lbl strong {
+  color: var(--ag-ta-fg, var(--foreground));
+  font-variant-numeric: tabular-nums;
+}
+
+#ag-we-settings-panel input[type="range"] {
+  width: 100%;
+  accent-color: var(--primary, #D97757);
+  cursor: pointer;
+}
+
+#ag-we-settings-panel .ag-we-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#ag-we-settings-panel .ag-we-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ag-ta-border, var(--border));
+  background-color: var(--ag-ta-bg, var(--background));
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#ag-we-settings-panel .ag-we-chk input {
+  accent-color: var(--primary, #D97757);
+}
+
+#ag-we-settings-panel .ag-we-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+#ag-we-settings-panel .ag-we-search {
+  flex: 1 1 180px;
+  min-width: 150px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ag-ta-border, var(--border));
+  background-color: var(--ag-ta-bg, var(--background));
+  color: var(--ag-ta-fg, var(--foreground));
+  font-size: 12px;
+  outline: none;
+}
+
+#ag-we-settings-panel .ag-we-search:focus {
+  border-color: var(--primary, #D97757);
+}
+
+#ag-we-settings-panel .ag-we-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 10px;
+}
+
+#ag-we-settings-panel .ag-we-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 190px;
+  position: relative;
+  border-radius: 10px;
+  border: 1px solid var(--ag-ta-border, var(--border));
+  background-color: var(--ag-ta-bg, var(--background));
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+}
+
+#ag-we-settings-panel .ag-we-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary, #D97757);
+}
+
+#ag-we-settings-panel .ag-we-card[data-active="1"] {
+  border-color: var(--primary, #D97757);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary, #D97757) 35%, transparent);
+}
+
+#ag-we-settings-panel .ag-we-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background-color: rgba(128, 128, 128, 0.14);
+  display: block;
+}
+
+#ag-we-settings-panel .ag-we-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.65);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#ag-we-settings-panel .ag-we-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.68);
+  color: #FFFFFF;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ag-we-settings-panel .ag-we-card-meta {
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#ag-we-settings-panel .ag-we-card-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ag-ta-fg, var(--foreground));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#ag-we-settings-panel .ag-we-card-sub {
+  font-size: 10.5px;
+  color: var(--ag-ta-muted, var(--muted-foreground));
+}

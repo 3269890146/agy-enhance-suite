@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <linearGradient id="agWeCardBg" x1="20" y1="20" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D97757" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#74221A" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="agWeGlass" x1="28" y1="30" x2="100" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FCFCFB" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#F7F5F0" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- 外留白 >= 14px，主体 18..110 -->
+  <rect x="18" y="22" width="78" height="72" rx="16" fill="url(#agWeCardBg)"/>
+  <!-- 动态波浪与山峦光影（壁纸隐喻） -->
+  <path d="M24 74 C36 58, 50 62, 62 50 C72 40, 82 44, 90 54 L90 86 C90 88, 88 88, 84 88 L26 88 C24 88, 24 86, 24 84 Z" fill="#FBF9F5" fill-opacity="0.28"/>
+  <circle cx="40" cy="42" r="7" fill="#FDE68A" fill-opacity="0.9"/>
+  <!-- 前景液态毛玻璃层 + 书卷框线 -->
+  <rect x="32" y="36" width="78" height="72" rx="16" fill="url(#agWeGlass)" stroke="#FCFCFB" stroke-opacity="0.82" stroke-width="2.5"/>
+  <!-- 书卷文字横线与播放三角 -->
+  <path d="M46 56 H76" stroke="#1F1E1D" stroke-opacity="0.72" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M46 68 H68" stroke="#1F1E1D" stroke-opacity="0.52" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="88" cy="84" r="13" fill="#D97757" stroke="#FCFCFB" stroke-width="2"/>
+  <path d="M84.5 78.5 L94.5 84 L84.5 89.5 Z" fill="#FCFCFB"/>
+</svg>
