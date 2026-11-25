@@ -1,13 +1,13 @@
 {
   "name": "agy-wallpaper-engine",
   "version": "1.0.0",
-  "description": "将本机 Steam Wallpaper Engine 动态壁纸与船板 Antigravity 主题补丁融合为一体：书卷液态毛玻璃 + WebWallGL 实时场景 + 原生双入口控制面板",
+  "description": "AGY 美化增强一条龙：船板书卷液态玻璃 × 动态壁纸 × 推理等级滑块 × 产出文件右键直达，零改内核一键部署",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/3269890146/agy-wallpaper-engine",
+  "homepage": "https://github.com/3269890146/agy-beautify-suite",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/3269890146/agy-wallpaper-engine.git"
+    "url": "git+https://github.com/3269890146/agy-beautify-suite.git"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -25,6 +25,8 @@
     "wallpaper-engine",
     "webwallgl",
     "liquid-glass",
+    "effort-slider",
+    "file-reveal",
     "theme",
     "plugin"
   ],

@@ -19,6 +19,7 @@ description: >-
 | 列出全部本机壁纸 | `GET http://127.0.0.1:48791/api/wallpapers` | 支持 `?refresh=1` 强制重扫 Steam 工坊与本地导入 |
 | 切换下一张 / 随机换壁纸 | `POST http://127.0.0.1:48791/api/next` | 可选 `{ "shuffle": true }` |
 | 修改任意参数 / 指定壁纸 | `POST http://127.0.0.1:48791/api/settings` | 见下方字段表，更新后前端 4 秒内自动同步 |
+| 外部打开文件或定位文件夹 | `POST http://127.0.0.1:48791/api/reveal` | 传 `{ "path": "...", "action": "reveal" \| "open" }`，调用系统资源管理器 |
 
 ### 可调节 `settings` 核心字段
 - `enabled` (`boolean`)：总开关（`false` 时退回纯粹船板实色界面）；
@@ -29,6 +30,7 @@ description: >-
 - `pauseOnBlur` (`boolean`)：窗口失焦自动暂停省电；
 - `showQuickBtn` (`boolean`)：是否显示右上角悬浮「壁纸」快捷按钮；
 - `effortSliderEnabled` (`boolean`)：是否启用模型菜单推理等级滑块（默认 `true`）；
+- `fileContextMenuEnabled` (`boolean`)：是否启用产出文件右键打开文件夹菜单（默认 `true`）；
 - `carouselEnabled` (`boolean`) & `carouselMinutes` (`number`)：自动轮播开关与间隔分钟数；
 - `mainOpacity` (`20~96`)、`sidebarOpacity` (`20~98`)、`cardOpacity` (`25~98`)、`blurPx` (`0~36`)、`scrimOpacity` (`0~75`)：书卷液态玻璃通透度与模糊度参数。
 

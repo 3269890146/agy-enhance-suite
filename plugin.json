@@ -1,10 +1,10 @@
 {
   "name": "agy-wallpaper-engine",
-  "displayName": "船板 × Wallpaper Engine 液态玻璃主题",
+  "displayName": "AGY 美化增强一条龙（壁纸 × 液态玻璃 × 推理滑块 × 文件直达）",
   "version": "1.0.0",
-  "description": "将本机 Steam Wallpaper Engine 动态壁纸（WebWallGL 实时场景/视频/网页）与船板主题补丁结合，提供书卷液态毛玻璃与图形化壁纸控制台。",
-  "homepage": "https://github.com/3269890146/agy-wallpaper-engine",
-  "repository": "https://github.com/3269890146/agy-wallpaper-engine",
+  "description": "AGY 美化增强一条龙：船板书卷液态玻璃 × 本机 Wallpaper Engine 动态壁纸 × 模型推理等级滑块 × 产出文件右键直达外部文件夹。",
+  "homepage": "https://github.com/3269890146/agy-beautify-suite",
+  "repository": "https://github.com/3269890146/agy-beautify-suite",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
     "帮我切换到下一张动态壁纸，或者按关键词搜索壁纸",

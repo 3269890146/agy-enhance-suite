@@ -3,11 +3,13 @@
  * - 默认监听 http://127.0.0.1:48791，纯本地回环，不对外网暴露、不消耗模型 Token
  * - 提供壁纸库扫描、设置持久化、本地导入、Range 视频流、Scene 内嵌 MP4 二级降级与 WebWallGL 托管
  */
+import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import {
-  existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync,
+  existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync,
 } from 'node:fs';
-import { basename, dirname, extname, join, resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { basename, dirname, extname, isAbsolute, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scanAllWallpapers } from './scanner.mjs';
 import { extractEmbeddedMp4ToCache } from './pkg-reader.mjs';
@@ -50,6 +52,7 @@ const DEFAULT_SETTINGS = {
   pauseOnBlur: true,
   showQuickBtn: true,
   effortSliderEnabled: true,
+  fileContextMenuEnabled: true,
   sceneLive: true,
   fit: 'cover',
   sceneFps: 60,
@@ -182,6 +185,7 @@ function applySettingsPatch(patch) {
   if ('pauseOnBlur' in patch) settings.pauseOnBlur = Boolean(patch.pauseOnBlur);
   if ('showQuickBtn' in patch) settings.showQuickBtn = Boolean(patch.showQuickBtn);
   if ('effortSliderEnabled' in patch) settings.effortSliderEnabled = Boolean(patch.effortSliderEnabled);
+  if ('fileContextMenuEnabled' in patch) settings.fileContextMenuEnabled = Boolean(patch.fileContextMenuEnabled);
   if ('sceneLive' in patch) settings.sceneLive = Boolean(patch.sceneLive);
   if ('fit' in patch && ['cover', 'contain', 'stretch'].includes(patch.fit)) settings.fit = patch.fit;
   if ('sceneFps' in patch) settings.sceneFps = clampNum(patch.sceneFps, 15, 144, settings.sceneFps);
@@ -203,6 +207,96 @@ const handleWebWallGl = createWebWallGlHandler({
   webwallglDir: WEBWALLGL_DIR,
   getWallpaperById: (id) => inventoryById.get(id) || null,
 });
+
+/**
+ * 解析并安全校验来自前端的本地路径 / file:// URI（仅允许绝对路径，严禁 HTTP 等外部协议）。
+ */
+function resolveLocalRevealTarget(rawInput, action = 'reveal') {
+  if (!rawInput || typeof rawInput !== 'string') {
+    return { ok: false, status: 400, error: '缺少目标路径' };
+  }
+  let s = rawInput.trim().replace(/^["'`]+|["'`]+$/g, '');
+  if (!s || s.length > 1024) {
+    return { ok: false, status: 400, error: '路径格式无效' };
+  }
+
+  const lower = s.toLowerCase();
+  if (/^(https?|mailto|tel|javascript|data|blob|plugin|about):/.test(lower)) {
+    return { ok: false, status: 400, error: '仅支持打开本地文件或文件夹路径' };
+  }
+
+  const safeDecode = (val) => {
+    try { return decodeURIComponent(val); } catch { return val; }
+  };
+
+  if (/^(file|vscode-file):\/\//i.test(s)) {
+    s = s.replace(/^(file|vscode-file):\/\/(?:vscode-app)?/i, '');
+    const hashIdx = s.indexOf('#');
+    if (hashIdx !== -1) s = s.slice(0, hashIdx);
+    const qIdx = s.indexOf('?');
+    if (qIdx !== -1) s = s.slice(0, qIdx);
+    s = safeDecode(s);
+    if (/^\/[A-Za-z]:/.test(s)) s = s.slice(1);
+    if (!s.startsWith('//') && /^[a-zA-Z0-9._-]+\//.test(s) && !s.startsWith('/')) {
+      s = '//' + s;
+    }
+  } else {
+    const hashIdx = s.indexOf('#');
+    if (hashIdx !== -1 && /^#L\d+/i.test(s.slice(hashIdx))) {
+      s = s.slice(0, hashIdx);
+    }
+    s = safeDecode(s);
+  }
+
+  // 去除末尾 :行号 或 :行号:列号
+  s = s.replace(/^(.*[^:]):\d+(?::\d+)?$/, '$1').trim();
+  if (/^~[\\/]/.test(s)) {
+    s = join(homedir(), s.slice(2));
+  }
+  if (!s || !isAbsolute(s)) {
+    return { ok: false, status: 400, error: '仅允许本地绝对路径' };
+  }
+
+  const cleanPath = normalize(s);
+  if (existsSync(cleanPath)) {
+    try {
+      const st = statSync(cleanPath);
+      return { ok: true, path: cleanPath, isDir: st.isDirectory(), fallbackParent: false };
+    } catch {
+      return { ok: false, status: 500, error: '读取路径状态失败' };
+    }
+  }
+
+  // 若目标文件已移动/删除但请求的是打开所在文件夹，自动降级打开存在的父目录
+  if (action === 'reveal') {
+    const parent = dirname(cleanPath);
+    if (parent && parent !== cleanPath && existsSync(parent)) {
+      return { ok: true, path: parent, isDir: true, fallbackParent: true };
+    }
+  }
+  return { ok: false, status: 404, error: '目标文件或文件夹不存在' };
+}
+
+/**
+ * 通过系统原生文件管理器拉起目标（严格采用参数数组传递，零 Shell 拼接）。
+ */
+function launchExternalReveal(targetPath, isDir, action) {
+  if (process.platform === 'win32') {
+    const args = action === 'reveal' && !isDir ? [`/select,${targetPath}`] : [targetPath];
+    const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore', windowsHide: false });
+    child.unref();
+    return;
+  }
+  if (process.platform === 'darwin') {
+    const args = action === 'reveal' && !isDir ? ['-R', targetPath] : [targetPath];
+    const child = spawn('open', args, { detached: true, stdio: 'ignore' });
+    child.unref();
+    return;
+  }
+  const dirOrTarget = action === 'reveal' && !isDir ? dirname(targetPath) : targetPath;
+  const child = spawn('xdg-open', [dirOrTarget], { detached: true, stdio: 'ignore' });
+  child.unref();
+}
 
 const server = createServer(async (req, res) => {
   try {
@@ -253,6 +347,28 @@ const server = createServer(async (req, res) => {
         ok: true,
         settings,
         current: cur ? serializeWallpaper(cur) : null,
+      });
+      return;
+    }
+
+    if (pathname === '/api/reveal' && method === 'POST') {
+      const buf = await readRequestBody(req);
+      const body = JSON.parse(buf.toString('utf8') || '{}');
+      const action = body.action === 'open' ? 'open' : 'reveal';
+      const resolved = resolveLocalRevealTarget(body.path, action);
+      if (!resolved.ok) {
+        sendJson(res, resolved.status || 400, { ok: false, error: resolved.error });
+        return;
+      }
+      if (!body.dryRun) {
+        launchExternalReveal(resolved.path, resolved.isDir, action);
+      }
+      sendJson(res, 200, {
+        ok: true,
+        action,
+        path: resolved.path,
+        isDir: resolved.isDir,
+        fallbackParent: resolved.fallbackParent,
       });
       return;
     }

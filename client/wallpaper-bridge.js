@@ -48,6 +48,7 @@
   let pendingOpenWeTab = false;
   let pendingOpenTimer = null;
   let effortSliderInst = null;
+  let fileContextMenuInst = null;
 
   const cleanups = [];
   const registerCleanup = (fn) => cleanups.push(fn);
@@ -579,6 +580,25 @@
     }
   }
 
+  function syncFileContextMenu() {
+    const enabled = !disposed && (!state.settings || state.settings.fileContextMenuEnabled !== false);
+    if (enabled) {
+      if (!fileContextMenuInst && typeof window.AgyFileContextMenu?.install === 'function') {
+        try {
+          fileContextMenuInst = window.AgyFileContextMenu.install({
+            daemonBase: DAEMON_BASE,
+            document,
+            window,
+          });
+        } catch {}
+      }
+    } else {
+      try { fileContextMenuInst?.stop?.(); } catch {}
+      fileContextMenuInst = null;
+      try { window.__agyFileContextMenuInstance?.stop?.(); } catch {}
+    }
+  }
+
   async function pullState(forceRender = false) {
     try {
       const data = await apiFetch('/api/state');
@@ -592,6 +612,7 @@
         renderStageWallpaper(forceRender);
         resetCarouselTimer();
         syncEffortSlider();
+        syncFileContextMenu();
         if (state.tabActive) renderSettingsPanel();
       }
     } catch {
@@ -616,6 +637,7 @@
     Object.assign(state.settings, patch);
     applyRootVisualVars();
     if ('effortSliderEnabled' in patch) syncEffortSlider();
+    if ('fileContextMenuEnabled' in patch) syncFileContextMenu();
     if ('currentId' in patch || 'enabled' in patch || 'sceneLive' in patch || 'fit' in patch) {
       const found = state.wallpapers.find((w) => w.id === state.settings.currentId);
       if (found) state.current = found;
@@ -881,6 +903,7 @@
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-blurpause" ${s.pauseOnBlur ? 'checked' : ''} />窗口失焦自动省电暂停</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-quickbtn" ${s.showQuickBtn ? 'checked' : ''} />显示右上角悬浮快捷钮</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-effort" ${s.effortSliderEnabled !== false ? 'checked' : ''} />模型菜单推理等级滑块</label>` +
+      `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-fcm" ${s.fileContextMenuEnabled !== false ? 'checked' : ''} />产出文件右键打开文件夹</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-carousel" ${s.carouselEnabled ? 'checked' : ''} />每 <input type="number" id="ag-we-n-mins" min="1" max="1440" value="${s.carouselMinutes || 15}" style="width:46px;padding:1px 4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:inherit;text-align:center;" /> 分钟自动轮播</label>` +
       `    </div>` +
       `  </div>` +
@@ -948,6 +971,7 @@
     bindChk('ag-we-c-blurpause', 'pauseOnBlur');
     bindChk('ag-we-c-quickbtn', 'showQuickBtn');
     bindChk('ag-we-c-effort', 'effortSliderEnabled');
+    bindChk('ag-we-c-fcm', 'fileContextMenuEnabled');
     bindChk('ag-we-c-carousel', 'carouselEnabled');
 
     panel.querySelector('#ag-we-n-mins')?.addEventListener('change', (e) => {
@@ -1121,6 +1145,9 @@
     try { effortSliderInst?.stop?.(); } catch {}
     effortSliderInst = null;
     try { window.__agCodexEffortSliderInstance?.stop?.(); } catch {}
+    try { fileContextMenuInst?.stop?.(); } catch {}
+    fileContextMenuInst = null;
+    try { window.__agyFileContextMenuInstance?.stop?.(); } catch {}
     clearWatchdog();
     document.documentElement.removeAttribute('data-ag-we-active');
     document.documentElement.removeAttribute('data-ag-we-glass');
@@ -1141,6 +1168,7 @@
 
   syncQuickButton();
   syncEffortSlider();
+  syncFileContextMenu();
   syncSettingsModal();
   void pullState(true).then(() => pullWallpapers(false));
   syncPollTimer = setInterval(() => {
