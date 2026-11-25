@@ -28,6 +28,7 @@ description: >-
 - `sceneLive` (`boolean`)：是否开启 WebWallGL 3D/粒子场景实时渲染（`false` 时自动走视频/静态预览降级）；
 - `pauseOnBlur` (`boolean`)：窗口失焦自动暂停省电；
 - `showQuickBtn` (`boolean`)：是否显示右上角悬浮「壁纸」快捷按钮；
+- `effortSliderEnabled` (`boolean`)：是否启用模型菜单推理等级滑块（默认 `true`）；
 - `carouselEnabled` (`boolean`) & `carouselMinutes` (`number`)：自动轮播开关与间隔分钟数；
 - `mainOpacity` (`20~96`)、`sidebarOpacity` (`20~98`)、`cardOpacity` (`25~98`)、`blurPx` (`0~36`)、`scrimOpacity` (`0~75`)：书卷液态玻璃通透度与模糊度参数。
 

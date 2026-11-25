@@ -3,7 +3,7 @@
   <h1>agy-wallpaper-engine</h1>
   <p><strong>船板 Antigravity 主题补丁 × Wallpaper Engine 书卷液态玻璃融合插件</strong></p>
   <p>
-    让 Google Antigravity 桌面版同时拥有「船板暖纸 / 暖炭排版、1,940 条界面汉化、Token 统计」与「本机 Steam Wallpaper Engine 动态壁纸 + iOS 书卷液态毛玻璃」。
+    让 Google Antigravity 桌面版同时拥有「船板暖纸 / 暖炭排版、1,940 条界面汉化、Token 统计」、「本机 Steam Wallpaper Engine 动态壁纸 + iOS 书卷液态毛玻璃」以及「模型菜单推理等级滑块」。
   </p>
 </div>
 
@@ -21,6 +21,7 @@
   - 入口二：主窗口右上角极简悬浮 **「壁纸」** 胶囊（左键直达控制台，右键随机换壁纸，支持隐藏）。
   - 全部设置与媒体由纯本地 `127.0.0.1:48791` 守护进程托管，日常对话 **0 额外 Token 消耗**；注册为 Antigravity 原生插件后，也支持随时用自然语言让 AI 帮你换壁纸、调参数。
 - **🔋 智能省电与避让**：窗口最小化、失焦（可配置）或打开 Antigravity 内置浏览器打孔时自动暂停渲染与视频解码并让出透明视野。
+- **🎚️ 模型菜单推理等级滑块（兼容船板汉化）**：在输入框下方的模型选择菜单底部挂载动态星尘/点阵推理等级滑块，支持主模型列表与 `Orchestrator` 规划器档位联动及独立记忆；内置中英文等价防闪烁与 `!important` 亮色穿透机制，避免与船板汉化及菜单全局配色冲突，并可在「动态壁纸」设置面板中一键开关。
 
 ---
 
@@ -72,6 +73,7 @@ node install.mjs install
 1. **可视化调优**：点击右上角悬浮 **「壁纸」** 按钮（或进入 **「系统设置 → 本地扩展 → 动态壁纸」**），可自由调整：
    - 玻璃预设：`书卷液态玻璃` / `澄澈高透` / `浓墨磨砂` / `仅对话区透出`
    - 实时滑块：主对话区不透明度、侧边栏玻璃浓度、液态玻璃模糊半径、护眼柔光遮罩
+   - 快捷开关：支持开启/关闭右上角悬浮快捷钮、**模型菜单推理等级滑块**（点开输入框下方模型选择菜单即可在底部拖动切换 `Low` / `Medium` / `High` / `Extra` 等档位）
    - 壁纸库：按 `场景 / 视频 / 网页 / 本地导入` 筛选，支持上传本地 `jpg/png/webp/gif/mp4/webm`
 2. **自然语言操控**：在 Antigravity 对话中直接提问（会自动匹配本插件内置的 `agy-wallpaper-engine` Skill）：
    - *“帮我换下一张动态壁纸”*
@@ -111,3 +113,4 @@ node install.mjs uninstall --full
 - **[elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)**（MIT）：参考学习了 `.pkg` 容器头部索引读取、Steam 库探测、`webwallgl` 挂载与 WE API shim 注入设计。
 - **[webwallgl](https://www.npmjs.com/package/webwallgl)**（MIT）：核心 WebGL 场景实时渲染库。
 - **[Anarcadia/chuanban-antigravity-theme-patch](https://github.com/Anarcadia/chuanban-antigravity-theme-patch)**：提供了优雅的昼夜书卷配色、四层字体引擎、1,940 条界面汉化、Token 统计与 `2.5s` 热重载扩展基础。本仓库不包含其源码，仅在安装时自动按需拉取官方仓并通过 `user/` 钩子协同工作。
+- **[LLYSH-HANNARI/antigravity-Codex-Claude-effort-slider](https://github.com/LLYSH-HANNARI/antigravity-Codex-Claude-effort-slider)**（MIT）：提供了模型菜单推理等级滑块核心组件（`client/effort-slider.js`），本项目在其基础上补充了受控生命周期管理及船板汉化/高亮样式兼容。
