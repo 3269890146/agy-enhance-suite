@@ -21,6 +21,7 @@ const VBS_FILE = join(ROOT_DIR, 'server', 'start-daemon.vbs');
 const PID_FILE = join(DATA_DIR, 'daemon.pid');
 const CLIENT_CSS = join(ROOT_DIR, 'client', 'wallpaper-bridge.css');
 const CLIENT_JS = join(ROOT_DIR, 'client', 'wallpaper-bridge.js');
+const CLIENT_EFFORT_SLIDER_JS = join(ROOT_DIR, 'client', 'effort-slider.js');
 
 const CHUANBAN_REPO_URL = 'https://github.com/Anarcadia/chuanban-antigravity-theme-patch.git';
 const CHUANBAN_DIR = join(homedir(), '.gemini', 'antigravity', 'theme-patch');
@@ -176,7 +177,18 @@ function syncUiToChuanban() {
   writeFileSync(CHUANBAN_CFG, JSON.stringify(cfg, null, 2), 'utf8');
 
   writeFileSync(CHUANBAN_CSS, readFileSync(CLIENT_CSS, 'utf8'), 'utf8');
-  writeFileSync(CHUANBAN_JS, readFileSync(CLIENT_JS, 'utf8'), 'utf8');
+  const bridgeJs = readFileSync(CLIENT_JS, 'utf8');
+  if (existsSync(CLIENT_EFFORT_SLIDER_JS)) {
+    const effortJs = readFileSync(CLIENT_EFFORT_SLIDER_JS, 'utf8');
+    // 禁用插件自身自动启动，交由 wallpaper-bridge.js 通过受控开关与 ctx.onCleanup 统一管理生命周期
+    const combinedJs =
+      `if (!(window.location && String(window.location.protocol || '').startsWith('plugin:'))) { window.__agCodexEffortSliderDisableAutoBoot = true;\n` +
+      `${effortJs}\n}\n` +
+      `${bridgeJs}`;
+    writeFileSync(CHUANBAN_JS, combinedJs, 'utf8');
+  } else {
+    writeFileSync(CHUANBAN_JS, bridgeJs, 'utf8');
+  }
 }
 
 function installNativePluginFiles() {

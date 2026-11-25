@@ -47,6 +47,7 @@
   let modalSyncRaf = 0;
   let pendingOpenWeTab = false;
   let pendingOpenTimer = null;
+  let effortSliderInst = null;
 
   const cleanups = [];
   const registerCleanup = (fn) => cleanups.push(fn);
@@ -563,6 +564,21 @@
   }
   registerCleanup(() => { if (carouselTimer) clearInterval(carouselTimer); });
 
+  function syncEffortSlider() {
+    const enabled = !disposed && (!state.settings || state.settings.effortSliderEnabled !== false);
+    if (enabled) {
+      if (!effortSliderInst && typeof window.AntigravityCodexEffortSlider?.installCodexEffortSlider === 'function') {
+        try {
+          effortSliderInst = window.AntigravityCodexEffortSlider.installCodexEffortSlider({ document, window });
+        } catch {}
+      }
+    } else {
+      try { effortSliderInst?.stop?.(); } catch {}
+      effortSliderInst = null;
+      try { window.__agCodexEffortSliderInstance?.stop?.(); } catch {}
+    }
+  }
+
   async function pullState(forceRender = false) {
     try {
       const data = await apiFetch('/api/state');
@@ -575,6 +591,7 @@
       if (forceRender || revChanged) {
         renderStageWallpaper(forceRender);
         resetCarouselTimer();
+        syncEffortSlider();
         if (state.tabActive) renderSettingsPanel();
       }
     } catch {
@@ -598,6 +615,7 @@
     if (!state.settings) return;
     Object.assign(state.settings, patch);
     applyRootVisualVars();
+    if ('effortSliderEnabled' in patch) syncEffortSlider();
     if ('currentId' in patch || 'enabled' in patch || 'sceneLive' in patch || 'fit' in patch) {
       const found = state.wallpapers.find((w) => w.id === state.settings.currentId);
       if (found) state.current = found;
@@ -862,6 +880,7 @@
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-mute" ${s.muted ? 'checked' : ''} />壁纸静音</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-blurpause" ${s.pauseOnBlur ? 'checked' : ''} />窗口失焦自动省电暂停</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-quickbtn" ${s.showQuickBtn ? 'checked' : ''} />显示右上角悬浮快捷钮</label>` +
+      `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-effort" ${s.effortSliderEnabled !== false ? 'checked' : ''} />模型菜单推理等级滑块</label>` +
       `      <label class="ag-we-chk"><input type="checkbox" id="ag-we-c-carousel" ${s.carouselEnabled ? 'checked' : ''} />每 <input type="number" id="ag-we-n-mins" min="1" max="1440" value="${s.carouselMinutes || 15}" style="width:46px;padding:1px 4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:inherit;text-align:center;" /> 分钟自动轮播</label>` +
       `    </div>` +
       `  </div>` +
@@ -928,6 +947,7 @@
     bindChk('ag-we-c-mute', 'muted');
     bindChk('ag-we-c-blurpause', 'pauseOnBlur');
     bindChk('ag-we-c-quickbtn', 'showQuickBtn');
+    bindChk('ag-we-c-effort', 'effortSliderEnabled');
     bindChk('ag-we-c-carousel', 'carouselEnabled');
 
     panel.querySelector('#ag-we-n-mins')?.addEventListener('change', (e) => {
@@ -1098,6 +1118,9 @@
   // ── 清理与启动 ──────────────────────────────────────────────────────────────
   registerCleanup(() => {
     disposed = true;
+    try { effortSliderInst?.stop?.(); } catch {}
+    effortSliderInst = null;
+    try { window.__agCodexEffortSliderInstance?.stop?.(); } catch {}
     clearWatchdog();
     document.documentElement.removeAttribute('data-ag-we-active');
     document.documentElement.removeAttribute('data-ag-we-glass');
@@ -1117,6 +1140,7 @@
   }
 
   syncQuickButton();
+  syncEffortSlider();
   syncSettingsModal();
   void pullState(true).then(() => pullWallpapers(false));
   syncPollTimer = setInterval(() => {

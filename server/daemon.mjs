@@ -49,6 +49,7 @@ const DEFAULT_SETTINGS = {
   volume: 0.35,
   pauseOnBlur: true,
   showQuickBtn: true,
+  effortSliderEnabled: true,
   sceneLive: true,
   fit: 'cover',
   sceneFps: 60,
@@ -180,6 +181,7 @@ function applySettingsPatch(patch) {
   if ('volume' in patch) settings.volume = clampNum(patch.volume, 0, 1, settings.volume);
   if ('pauseOnBlur' in patch) settings.pauseOnBlur = Boolean(patch.pauseOnBlur);
   if ('showQuickBtn' in patch) settings.showQuickBtn = Boolean(patch.showQuickBtn);
+  if ('effortSliderEnabled' in patch) settings.effortSliderEnabled = Boolean(patch.effortSliderEnabled);
   if ('sceneLive' in patch) settings.sceneLive = Boolean(patch.sceneLive);
   if ('fit' in patch && ['cover', 'contain', 'stretch'].includes(patch.fit)) settings.fit = patch.fit;
   if ('sceneFps' in patch) settings.sceneFps = clampNum(patch.sceneFps, 15, 144, settings.sceneFps);
