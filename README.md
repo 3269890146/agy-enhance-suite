@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="assets/logo.svg" width="96" height="96" alt="agy-beautify-suite logo" />
-  <h1>agy-beautify-suite</h1>
-  <p><strong>AGY 美化增强一条龙：船板书卷液态玻璃 × 动态壁纸 × 推理等级滑块 × 产出文件右键直达，零改内核一键部署</strong></p>
+  <img src="assets/logo.svg" width="96" height="96" alt="agy-enhance-suite logo" />
+  <h1>agy-enhance-suite</h1>
+  <p><strong>AGY 全能增强整合包：船板液态玻璃动态壁纸 × 推理等级滑块 × 产出文件右键直达 × 官方真实额度同步 & 60fps 猫娘桌宠，零改内核一键部署</strong></p>
   <p>
-    让 Google Antigravity 桌面版一站式拥有「船板暖纸 / 暖炭排版、1,940 条界面汉化、Token 统计」、「本机 Steam Wallpaper Engine 动态壁纸 + iOS 书卷液态毛玻璃」、「模型菜单动态推理等级滑块」与「产出文件右键外部打开文件夹」。
+    为 Google Antigravity 桌面版一站式整合「船板暖纸/暖炭排版与 1,940 条汉化」、「Steam Wallpaper Engine 动态壁纸 + iOS 书卷液态毛玻璃」、「模型菜单推理等级滑块」、「产出文件右键外部打开文件夹」与「官方 Sidecar 真实 5h/周额度自动同步 + Windows 60fps 猫娘桌宠」，全部走非侵入扩展接口，零改官方二进制。
   </p>
 </div>
 
@@ -58,8 +58,8 @@ flowchart LR
 ### 方式 A：终端一条命令全套自动安装（推荐）
 
 ```bash
-git clone https://github.com/3269890146/agy-beautify-suite.git
-cd agy-beautify-suite
+git clone https://github.com/3269890146/agy-enhance-suite.git
+cd agy-enhance-suite
 node install.mjs install
 ```
 
@@ -77,7 +77,7 @@ node install.mjs install
 ### 方式 B：直接发给 AI Agent 自动部署
 
 > **💬 复制发给 Antigravity / Claude Code / Codex**：  
-> 请帮我克隆 `https://github.com/3269890146/agy-beautify-suite.git` 到本地工作区，检查当前 Node.js 版本（>= 22），然后运行 `node install.mjs install` 一键完成船板主题补丁、Wallpaper Engine 书卷液态玻璃、推理等级滑块及产出文件右键直达插件的全套部署。如果我正在 Antigravity 对话中且缺少调试端口参数，请不要强制强杀客户端，提示我对话结束后手动重启一次 Antigravity 即可。
+> 请帮我克隆 `https://github.com/3269890146/agy-enhance-suite.git` 到本地工作区，检查当前 Node.js 版本（>= 22），然后运行 `node install.mjs install` 一键完成船板主题补丁、Wallpaper Engine 书卷液态玻璃、推理等级滑块及产出文件右键直达插件的全套部署（如需连带安装猫娘桌宠与官方真实额度同步桥可加 `--with-quota-pet`）。如果我正在 Antigravity 对话中且缺少调试端口参数，请不要强制强杀客户端，提示我对话结束后手动重启一次 Antigravity 即可。
 
 ---
 

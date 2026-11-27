@@ -1,10 +1,10 @@
 {
   "name": "agy-wallpaper-engine",
-  "displayName": "AGY 美化增强一条龙（壁纸 × 液态玻璃 × 推理滑块 × 文件直达）",
+  "displayName": "AGY 全能增强整合包（壁纸 × 液态玻璃 × 推理滑块 × 文件直达 × 真实额度桌宠）",
   "version": "1.0.0",
-  "description": "AGY 美化增强一条龙：船板书卷液态玻璃 × 本机 Wallpaper Engine 动态壁纸 × 模型推理等级滑块 × 产出文件右键直达外部文件夹。",
-  "homepage": "https://github.com/3269890146/agy-beautify-suite",
-  "repository": "https://github.com/3269890146/agy-beautify-suite",
+  "description": "AGY 全能增强整合包：船板液态玻璃动态壁纸 × 推理等级滑块 × 产出文件右键直达 × 官方真实额度同步 & 60fps 猫娘桌宠，零改内核一键部署。",
+  "homepage": "https://github.com/3269890146/agy-enhance-suite",
+  "repository": "https://github.com/3269890146/agy-enhance-suite",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
     "帮我切换到下一张动态壁纸，或者按关键词搜索壁纸",
