@@ -69,6 +69,9 @@ public sealed class AgyPetWinFollower {
   [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
   [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+  [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hwnd);
+  [DllImport("user32.dll")] private static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
+  [DllImport("shcore.dll")] private static extern int SetProcessDpiAwareness(int awareness);
   [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
   [DllImport("user32.dll", EntryPoint = "SetWindowLongW")] private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
   [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
@@ -76,6 +79,16 @@ public sealed class AgyPetWinFollower {
   [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
   [DllImport("user32.dll")] private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
   [DllImport("user32.dll")] private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+  public static void EnablePerMonitorDpi() {
+    // 强制以 Per-Monitor DPI Aware v2 读取物理像素坐标，避免多显示器不同缩放率（如主屏 100% / 副屏 125%）下 SetWindowPos 偏移飞出窗口
+    try {
+      if (SetProcessDpiAwarenessContext(new IntPtr(-4))) return;
+    } catch { }
+    try {
+      SetProcessDpiAwareness(2);
+    } catch { }
+  }
 
   private static IntPtr SetOwnerPtr(IntPtr hWnd, IntPtr owner) {
     if (IntPtr.Size == 8) return SetWindowLongPtr64(hWnd, GWLP_HWNDPARENT, owner);
@@ -96,6 +109,7 @@ public sealed class AgyPetWinFollower {
   private System.Windows.Forms.Timer _watchdog;
 
   public AgyPetWinFollower(IntPtr petHwnd) {
+    EnablePerMonitorDpi();
     _petHwnd = petHwnd;
     _eventProc = new WinEventDelegate(OnWinEvent);
   }
@@ -218,9 +232,17 @@ public sealed class AgyPetWinFollower {
       return;
     }
 
-    // 停靠在 Antigravity 主窗口右下角内侧（纯物理像素空间，不受 125%/150% DPI 缩放偏移影响）
-    int targetX = agyRect.Right - petW - 14;
-    int targetY = agyRect.Bottom - petH - 10;
+    // 按 Antigravity 当前所在显示器的真实 DPI 换算物理像素边距，并在跨屏缩放变化后立即二次重算贴准
+    uint dpi = 96;
+    try {
+      uint rawDpi = GetDpiForWindow(_agyHwnd);
+      if (rawDpi >= 96) dpi = rawDpi;
+    } catch { }
+    int marginX = (int)Math.Round(14.0 * dpi / 96.0);
+    int marginY = (int)Math.Round(10.0 * dpi / 96.0);
+
+    int targetX = agyRect.Right - petW - marginX;
+    int targetY = agyRect.Bottom - petH - marginY;
 
     if ((GetExStyle(_petHwnd) & WS_EX_TOPMOST) != 0) {
       SetWindowPos(_petHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
@@ -228,6 +250,18 @@ public sealed class AgyPetWinFollower {
 
     if (petRect.Left != targetX || petRect.Top != targetY) {
       SetWindowPos(_petHwnd, IntPtr.Zero, targetX, targetY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+      RECT afterRect;
+      if (GetWindowRect(_petHwnd, out afterRect)) {
+        int afterW = afterRect.Right - afterRect.Left;
+        int afterH = afterRect.Bottom - afterRect.Top;
+        if (afterW > 10 && afterH > 10 && (afterW != petW || afterH != petH)) {
+          int targetX2 = agyRect.Right - afterW - marginX;
+          int targetY2 = agyRect.Bottom - afterH - marginY;
+          if (afterRect.Left != targetX2 || afterRect.Top != targetY2) {
+            SetWindowPos(_petHwnd, IntPtr.Zero, targetX2, targetY2, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+          }
+        }
+      }
     }
 
     if (!IsWindowVisible(_petHwnd)) {
@@ -282,6 +316,8 @@ public sealed class AgyPetWinFollower {
   }
 }
 "@
+
+[AgyPetWinFollower]::EnablePerMonitorDpi()
 
 if ($DetachOnly) {
   [AgyPetWinFollower]::DetachOwner([IntPtr]$PetHwnd)
