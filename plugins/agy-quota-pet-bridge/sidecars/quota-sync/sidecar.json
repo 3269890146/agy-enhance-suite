@@ -1,0 +1,8 @@
+{
+  "command": "node",
+  "args": ["sync.mjs"],
+  "restart_policy": "always",
+  "display_name": "Quota Pet Sync Bridge",
+  "description": "将官方真实 5h/周配额同步写入 ~/.gemini/antigravity-pet-quota.json",
+  "has_web_ui": false
+}

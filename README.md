@@ -23,7 +23,10 @@
   - 入口二：主窗口右上角极简悬浮 **「壁纸」** 胶囊（左键直达控制台，右键随机换壁纸，支持隐藏并已避让原生分屏按钮）。
   - 全部设置与媒体由纯本地 `127.0.0.1:48791` 守护进程托管，日常对话 **0 额外 Token 消耗**；注册为 Antigravity 原生插件后，也支持随时用自然语言让 AI 帮你换壁纸、调参数。
 - **🔋 智能省电与避让**：窗口最小化、失焦（可配置）或打开 Antigravity 内置浏览器打孔时自动暂停渲染与视频解码并让出透明视野。
-- **🐱 可选猫娘额度桌宠（按需拉取）**：支持一条命令按需拉取并启动 [Antigravity-Gemini-Quota-Pet](https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet)（独立透明悬浮猫娘桌宠 + 漫画思考气泡，监控剩余 5 小时 / 周额度与每轮对话消耗；因上游立绘素材禁止二次分发，本仓库仅按需从上游官方仓拉取，不直接夹带受限立绘）。
+- **🐱 猫娘额度桌宠增强套装（按需拉取 + 自造官方真实同步桥 & 60fps 窗口跟手）**：
+  - 执行 `node install.mjs quota-pet` 或 `install --with-quota-pet` 时按需拉取 [Antigravity-Gemini-Quota-Pet](https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet)（不夹带上游受限立绘），并**自动打入本仓库自研的两项关键补丁**：
+    1. **官方 Sidecar 真实额度自动同步桥（`plugins/agy-quota-pet-bridge`）**：通过 Antigravity 官方 Plugin Sidecar 接口每 45 秒直读真实 5 小时 / 每周剩余百分比与官方重置时间，自动写入 `~/.gemini/antigravity-pet-quota.json`；`quota-engine.js` 直信官方数据，彻底告别本地公式瞎估与手动重置；
+    2. **Windows 60fps 原生窗口跟手补丁（`addons/quota-pet/win-follow.ps1`）**：通过 `SetWinEventHook` + `GWLP_HWNDPARENT` 绑定 Antigravity 主窗口，实现 60fps 贴靠右下角拖动、随主窗口一起最小化/还原、切到其他软件自动让位；点击「重置到屏幕右下角」或拖走时自动解绑 `Owner` 留在桌面右下角。
 
 ---
 
@@ -42,6 +45,8 @@ flowchart LR
     FCM["文件右键直达菜单\nfile-context-menu.js"] --> Bridge
     FCM --> Daemon
     Bridge --> UI["Antigravity 主窗口\n液态玻璃 + 推理滑块 + 文件右键 + 控制台"]
+    Sidecar["官方真实额度 Sidecar\nagy-quota-pet-bridge"] -->|45s 直读真实 5h/周额度| PetFile["~/.gemini/antigravity-pet-quota.json"]
+    PetFile --> Pet["猫娘额度桌宠\n60fps Win32 跟手 + 免校准"]
 ```
 
 ---
@@ -100,8 +105,11 @@ node install.mjs install
 # 查看后台守护服务、船板补丁与插件状态
 node install.mjs status
 
-# 按需拉取并启动可选猫娘额度桌宠（默认装到 data/quota-pet，可用 --quota-pet-dir 自定义目录）
+# 按需拉取猫娘额度桌宠并自动打入 Windows 60fps 跟手 + 官方真实额度同步补丁
 node install.mjs quota-pet
+
+# 仅安装/更新官方 Sidecar 真实额度同步插件（agy-quota-pet-bridge）
+node install.mjs quota-bridge
 
 # 手动启停后台守护服务
 node install.mjs start

@@ -1,7 +1,7 @@
 /**
  * 船板 × Wallpaper Engine 液态玻璃主题全自动安装与生命周期 CLI
- * 支持子命令：install | sync-ui | start | stop | status | doctor | uninstall
- * 支持参数：--update-chuanban | --skip-chuanban | --preset <name> | --dark-preset <name> | --full
+ * 支持子命令：install | sync-ui | start | stop | status | doctor | quota-pet | quota-bridge | uninstall
+ * 支持参数：--update-chuanban | --skip-chuanban | --preset <name> | --dark-preset <name> | --with-quota-pet | --full
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import {
@@ -10,6 +10,7 @@ import {
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { patchQuotaPet } from './addons/quota-pet/patch-quota-pet.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +36,11 @@ const CHUANBAN_CFG = join(CHUANBAN_USER_DIR, 'config.json');
 
 const PLUGIN_NAME = 'agy-wallpaper-engine';
 const PLUGIN_DEST_DIR = join(homedir(), '.gemini', 'config', 'plugins', PLUGIN_NAME);
+
+const QUOTA_BRIDGE_PLUGIN_NAME = 'agy-quota-pet-bridge';
+const QUOTA_BRIDGE_SRC_DIR = join(ROOT_DIR, 'plugins', QUOTA_BRIDGE_PLUGIN_NAME);
+const QUOTA_BRIDGE_DEST_DIR = join(homedir(), '.gemini', 'config', 'plugins', QUOTA_BRIDGE_PLUGIN_NAME);
+const QUOTA_BRIDGE_STATUS_PATH = join(homedir(), '.gemini', 'antigravity-pet-quota.status.json');
 
 const QUOTA_PET_REPO_URL = 'https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet.git';
 const QUOTA_PET_DEFAULT_DIR = process.env.AGY_QUOTA_PET_DIR || join(DATA_DIR, 'quota-pet');
@@ -454,6 +460,77 @@ async function startDaemon() {
   throw new Error('壁纸守护进程启动超时，请查看 data/daemon.log');
 }
 
+function findAgyCliBin() {
+  const candidates = process.platform === 'win32'
+    ? [
+        join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'agy', 'bin', 'agy.exe'),
+        'agy.exe',
+        'agy',
+      ]
+    : ['agy'];
+  for (const bin of candidates) {
+    if (bin.includes('\\') || bin.includes('/')) {
+      if (existsSync(bin)) return bin;
+    } else {
+      const probe = spawnSync(bin, ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 3000 });
+      if (probe.status === 0) return bin;
+    }
+  }
+  return null;
+}
+
+/**
+ * 安装并启用原创官方 Sidecar 真实额度同步插件（agy-quota-pet-bridge）。
+ */
+function installQuotaBridgePlugin() {
+  const srcManifest = join(QUOTA_BRIDGE_SRC_DIR, 'plugin.json');
+  const srcSidecar = join(QUOTA_BRIDGE_SRC_DIR, 'sidecars', 'quota-sync', 'sidecar.json');
+  const srcSync = join(QUOTA_BRIDGE_SRC_DIR, 'sidecars', 'quota-sync', 'sync.mjs');
+  if (!existsSync(srcManifest) || !existsSync(srcSidecar) || !existsSync(srcSync)) {
+    return { installed: false, reason: 'source-missing' };
+  }
+
+  mkdirSync(join(QUOTA_BRIDGE_DEST_DIR, 'sidecars', 'quota-sync'), { recursive: true });
+  copyFileSync(srcManifest, join(QUOTA_BRIDGE_DEST_DIR, 'plugin.json'));
+  copyFileSync(srcSidecar, join(QUOTA_BRIDGE_DEST_DIR, 'sidecars', 'quota-sync', 'sidecar.json'));
+  copyFileSync(srcSync, join(QUOTA_BRIDGE_DEST_DIR, 'sidecars', 'quota-sync', 'sync.mjs'));
+
+  let enabledByCli = false;
+  const agyBin = findAgyCliBin();
+  if (agyBin) {
+    const res = spawnSync(agyBin, ['plugin', 'enable', QUOTA_BRIDGE_PLUGIN_NAME], {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 5000,
+    });
+    enabledByCli = res.status === 0;
+  }
+
+  return {
+    installed: true,
+    pluginDir: QUOTA_BRIDGE_DEST_DIR,
+    enabledByCli,
+  };
+}
+
+function readQuotaBridgeStatus() {
+  if (!existsSync(QUOTA_BRIDGE_STATUS_PATH)) return null;
+  try {
+    const raw = JSON.parse(readFileSync(QUOTA_BRIDGE_STATUS_PATH, 'utf8'));
+    return {
+      ok: Boolean(raw.ok),
+      updated_at: raw.updated_at || null,
+      http_status: raw.http_status ?? null,
+      buckets_found: raw.buckets_found ?? 0,
+      five_hour_pct: raw.five_hour_pct ?? null,
+      weekly_pct: raw.weekly_pct ?? null,
+      error: raw.error || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function ensureQuotaPetInstalled(targetDir) {
   const pkgPath = join(targetDir, 'package.json');
   const gitDir = join(targetDir, '.git');
@@ -484,7 +561,14 @@ function ensureQuotaPetInstalled(targetDir) {
   if (installRes.status !== 0) {
     throw new Error(`猫娘额度桌宠依赖安装失败 (${targetDir})`);
   }
-  return existsSync(gitDir) ? 'ready' : 'installed';
+
+  const patched = patchQuotaPet(targetDir);
+  const quotaBridge = installQuotaBridgePlugin();
+  return {
+    status: existsSync(gitDir) ? 'ready' : 'installed',
+    patched,
+    quotaBridge,
+  };
 }
 
 function startQuotaPet(targetDir) {
@@ -549,9 +633,9 @@ async function main() {
     let quotaPet = null;
     if (hasFlag('--with-quota-pet')) {
       const petDir = getFlagValue('--quota-pet-dir', QUOTA_PET_DEFAULT_DIR);
-      const petStatus = ensureQuotaPetInstalled(petDir);
+      const petInfo = ensureQuotaPetInstalled(petDir);
       const started = hasFlag('--no-start') ? false : startQuotaPet(petDir);
-      quotaPet = { dir: petDir, status: petStatus, started };
+      quotaPet = { dir: petDir, ...petInfo, started };
     }
     console.log(JSON.stringify({
       ok: true,
@@ -572,15 +656,26 @@ async function main() {
 
   if (cmd === 'quota-pet') {
     const petDir = getFlagValue('--quota-pet-dir', QUOTA_PET_DEFAULT_DIR);
-    const status = ensureQuotaPetInstalled(petDir);
+    const petInfo = ensureQuotaPetInstalled(petDir);
     const started = hasFlag('--no-start') ? false : startQuotaPet(petDir);
     console.log(JSON.stringify({
       ok: true,
       action: 'quota-pet',
       dir: petDir,
-      status,
+      ...petInfo,
       started,
       repo: QUOTA_PET_REPO_URL,
+    }, null, 2));
+    return;
+  }
+
+  if (cmd === 'quota-bridge') {
+    const quotaBridge = installQuotaBridgePlugin();
+    console.log(JSON.stringify({
+      ok: Boolean(quotaBridge.installed),
+      action: 'quota-bridge',
+      quotaBridge,
+      quotaBridgeStatus: readQuotaBridgeStatus(),
     }, null, 2));
     return;
   }
@@ -625,6 +720,8 @@ async function main() {
       scheduledTask: taskStatus,
       chuanbanInstalled: existsSync(CHUANBAN_MANIFEST),
       pluginInstalled: existsSync(join(PLUGIN_DEST_DIR, 'plugin.json')),
+      quotaBridgeInstalled: existsSync(join(QUOTA_BRIDGE_DEST_DIR, 'plugin.json')),
+      quotaBridgeStatus: readQuotaBridgeStatus(),
       health,
     }, null, 2));
     return;
@@ -655,7 +752,7 @@ async function main() {
     return;
   }
 
-  console.error(`未知命令: ${cmd}，支持: install | sync-ui | start | stop | status | doctor | quota-pet | uninstall`);
+  console.error(`未知命令: ${cmd}，支持: install | sync-ui | start | stop | status | doctor | quota-pet | quota-bridge | uninstall`);
   process.exit(1);
 }
 

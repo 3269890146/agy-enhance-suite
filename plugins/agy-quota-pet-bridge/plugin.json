@@ -1,0 +1,6 @@
+{
+  "name": "agy-quota-pet-bridge",
+  "display_name": "Antigravity Quota Pet Bridge",
+  "description": "后台同步 Antigravity 官方 5 小时与每周真实剩余额度至 ~/.gemini/antigravity-pet-quota.json，供猫娘额度桌宠免校准自动读取",
+  "version": "1.0.0"
+}
