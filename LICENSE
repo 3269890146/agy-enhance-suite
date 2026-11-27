@@ -33,3 +33,5 @@ SOFTWARE.
 - **antigravity-Codex-Claude-effort-slider** (https://github.com/LLYSH-HANNARI/antigravity-Codex-Claude-effort-slider) — MIT License
   `Copyright (c) 2026 月上寒 (LLYSH-HANNARI)`
   Integrated in `client/effort-slider.js` for the interactive reasoning effort slider inside the Antigravity model selector menu.
+- **Antigravity-Gemini-Quota-Pet** (https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet) — MIT License (code); character artwork under upstream `PROVENANCE.md` restrictions
+  This repository does NOT redistribute artwork or files from `Antigravity-Gemini-Quota-Pet`. Instead, `install.mjs` fetches the official upstream repository on demand when `--with-quota-pet` or `quota-pet` is invoked.

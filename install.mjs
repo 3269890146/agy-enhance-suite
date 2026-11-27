@@ -36,6 +36,9 @@ const CHUANBAN_CFG = join(CHUANBAN_USER_DIR, 'config.json');
 const PLUGIN_NAME = 'agy-wallpaper-engine';
 const PLUGIN_DEST_DIR = join(homedir(), '.gemini', 'config', 'plugins', PLUGIN_NAME);
 
+const QUOTA_PET_REPO_URL = 'https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet.git';
+const QUOTA_PET_DEFAULT_DIR = process.env.AGY_QUOTA_PET_DIR || join(DATA_DIR, 'quota-pet');
+
 const TASK_NAME = 'AntigravityWallpaperDaemon';
 const MAC_PLIST_LABEL = 'com.antigravity.wallpaper';
 const LINUX_SERVICE_NAME = 'antigravity-wallpaper.service';
@@ -451,6 +454,85 @@ async function startDaemon() {
   throw new Error('壁纸守护进程启动超时，请查看 data/daemon.log');
 }
 
+function ensureQuotaPetInstalled(targetDir) {
+  const pkgPath = join(targetDir, 'package.json');
+  const gitDir = join(targetDir, '.git');
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+  if (!existsSync(pkgPath)) {
+    mkdirSync(dirname(targetDir), { recursive: true });
+    const cloneRes = spawnSync('git', ['clone', '--depth', '1', QUOTA_PET_REPO_URL, targetDir], {
+      stdio: 'inherit',
+      windowsHide: true,
+    });
+    if (cloneRes.status !== 0 || !existsSync(pkgPath)) {
+      throw new Error(`按需拉取猫娘额度桌宠失败，请检查网络连接 (${QUOTA_PET_REPO_URL})`);
+    }
+  } else if (hasFlag('--update-quota-pet') && existsSync(gitDir)) {
+    spawnSync('git', ['-C', targetDir, 'pull', '--ff-only'], {
+      stdio: 'inherit',
+      windowsHide: true,
+    });
+  }
+
+  const installRes = spawnSync(npmCmd, ['install', '--no-audit', '--no-fund'], {
+    cwd: targetDir,
+    stdio: 'inherit',
+    windowsHide: true,
+    shell: process.platform === 'win32',
+  });
+  if (installRes.status !== 0) {
+    throw new Error(`猫娘额度桌宠依赖安装失败 (${targetDir})`);
+  }
+  return existsSync(gitDir) ? 'ready' : 'installed';
+}
+
+function startQuotaPet(targetDir) {
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.ELECTRON_RUN_AS_NODE;
+
+  const electronBin = process.platform === 'win32'
+    ? join(targetDir, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : join(targetDir, 'node_modules', '.bin', 'electron');
+  if (existsSync(electronBin)) {
+    const child = spawn(electronBin, ['.'], {
+      cwd: targetDir,
+      env: cleanEnv,
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+    });
+    child.unref();
+    return true;
+  }
+
+  if (process.platform === 'win32') {
+    const vbs = join(targetDir, '启动桌宠(无黑框).vbs');
+    if (existsSync(vbs)) {
+      const child = spawn('wscript.exe', ['//B', '//NoLogo', vbs], {
+        cwd: targetDir,
+        env: cleanEnv,
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      child.unref();
+      return true;
+    }
+  }
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const child = spawn(npmCmd, ['start'], {
+    cwd: targetDir,
+    env: cleanEnv,
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+    shell: process.platform === 'win32',
+  });
+  child.unref();
+  return true;
+}
+
 async function main() {
   const cmd = (args.find((a) => !a.startsWith('--')) || 'status').toLowerCase();
   mkdirSync(DATA_DIR, { recursive: true });
@@ -464,6 +546,13 @@ async function main() {
     const autostartMethod = registerAutostartService();
     await stopDaemon();
     const health = await startDaemon();
+    let quotaPet = null;
+    if (hasFlag('--with-quota-pet')) {
+      const petDir = getFlagValue('--quota-pet-dir', QUOTA_PET_DEFAULT_DIR);
+      const petStatus = ensureQuotaPetInstalled(petDir);
+      const started = hasFlag('--no-start') ? false : startQuotaPet(petDir);
+      quotaPet = { dir: petDir, status: petStatus, started };
+    }
     console.log(JSON.stringify({
       ok: true,
       action: 'install',
@@ -476,6 +565,22 @@ async function main() {
       autostartMethod,
       scheduledTask: autostartMethod === 'schtasks' ? TASK_NAME : autostartMethod,
       health,
+      quotaPet,
+    }, null, 2));
+    return;
+  }
+
+  if (cmd === 'quota-pet') {
+    const petDir = getFlagValue('--quota-pet-dir', QUOTA_PET_DEFAULT_DIR);
+    const status = ensureQuotaPetInstalled(petDir);
+    const started = hasFlag('--no-start') ? false : startQuotaPet(petDir);
+    console.log(JSON.stringify({
+      ok: true,
+      action: 'quota-pet',
+      dir: petDir,
+      status,
+      started,
+      repo: QUOTA_PET_REPO_URL,
     }, null, 2));
     return;
   }
@@ -550,7 +655,7 @@ async function main() {
     return;
   }
 
-  console.error(`未知命令: ${cmd}，支持: install | sync-ui | start | stop | status | doctor | uninstall`);
+  console.error(`未知命令: ${cmd}，支持: install | sync-ui | start | stop | status | doctor | quota-pet | uninstall`);
   process.exit(1);
 }
 

@@ -23,6 +23,7 @@
   - 入口二：主窗口右上角极简悬浮 **「壁纸」** 胶囊（左键直达控制台，右键随机换壁纸，支持隐藏并已避让原生分屏按钮）。
   - 全部设置与媒体由纯本地 `127.0.0.1:48791` 守护进程托管，日常对话 **0 额外 Token 消耗**；注册为 Antigravity 原生插件后，也支持随时用自然语言让 AI 帮你换壁纸、调参数。
 - **🔋 智能省电与避让**：窗口最小化、失焦（可配置）或打开 Antigravity 内置浏览器打孔时自动暂停渲染与视频解码并让出透明视野。
+- **🐱 可选猫娘额度桌宠（按需拉取）**：支持一条命令按需拉取并启动 [Antigravity-Gemini-Quota-Pet](https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet)（独立透明悬浮猫娘桌宠 + 漫画思考气泡，监控剩余 5 小时 / 周额度与每轮对话消耗；因上游立绘素材禁止二次分发，本仓库仅按需从上游官方仓拉取，不直接夹带受限立绘）。
 
 ---
 
@@ -64,6 +65,8 @@ node install.mjs install
 4. 安装 Antigravity 原生插件清单至 `~/.gemini/config/plugins/agy-wallpaper-engine/`；
 5. 注册后台守护自启服务（Windows 计划任务 / macOS LaunchAgent / Linux systemd）并立即启动。
 
+> ✨ 如需一并装上**猫娘额度桌宠**，安装时加上 `--with-quota-pet` 参数即可：`node install.mjs install --with-quota-pet`（也可后续随时运行 `node install.mjs quota-pet` 单独拉取启动）。
+
 > 💡 若你已在 Antigravity 内部会话中执行安装，且本机 Antigravity 未带 `--remote-debugging-port=0` 启动，请在安装结束后**手动退出并重开一次 Antigravity** 即可生效（之后日常使用都会无感自动注入）。
 
 ### 方式 B：直接发给 AI Agent 自动部署
@@ -97,6 +100,9 @@ node install.mjs install
 # 查看后台守护服务、船板补丁与插件状态
 node install.mjs status
 
+# 按需拉取并启动可选猫娘额度桌宠（默认装到 data/quota-pet，可用 --quota-pet-dir 自定义目录）
+node install.mjs quota-pet
+
 # 手动启停后台守护服务
 node install.mjs start
 node install.mjs stop
@@ -122,3 +128,4 @@ node install.mjs uninstall --full
 - **[webwallgl](https://www.npmjs.com/package/webwallgl)**（MIT）：核心 WebGL 场景实时渲染库。
 - **[Anarcadia/chuanban-antigravity-theme-patch](https://github.com/Anarcadia/chuanban-antigravity-theme-patch)**：提供了优雅的昼夜书卷配色、四层字体引擎、1,940 条界面汉化、Token 统计与 `2.5s` 热重载扩展基础。本仓库不包含其源码，仅在安装时自动按需拉取官方仓并通过 `user/` 钩子协同工作。
 - **[LLYSH-HANNARI/antigravity-Codex-Claude-effort-slider](https://github.com/LLYSH-HANNARI/antigravity-Codex-Claude-effort-slider)**（MIT）：提供了模型菜单推理等级滑块核心组件（`client/effort-slider.js`），本项目在其基础上补充了受控生命周期管理及船板汉化/高亮样式兼容。
+- **[fornemadepi/Antigravity-Gemini-Quota-Pet](https://github.com/fornemadepi/Antigravity-Gemini-Quota-Pet)**（代码 MIT，立绘素材受上游 `PROVENANCE.md` 限制禁止再分发）：提供可选猫娘额度桌宠扩展能力，本项目仅在用户执行 `quota-pet` 或 `--with-quota-pet` 时按需从上游官方仓库拉取，不重分发其立绘文件。

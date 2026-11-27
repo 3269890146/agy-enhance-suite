@@ -282,8 +282,15 @@ function resolveLocalRevealTarget(rawInput, action = 'reveal') {
  */
 function launchExternalReveal(targetPath, isDir, action) {
   if (process.platform === 'win32') {
-    const args = action === 'reveal' && !isDir ? [`/select,${targetPath}`] : [targetPath];
-    const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore', windowsHide: false });
+    const winPath = String(targetPath).replace(/\//g, '\\').replace(/["\r\n]/g, '');
+    // 使用 windowsVerbatimArguments 保证 explorer.exe 收到 /select,"..." 而非整段被引号包裹导致回退打开「文档」
+    const args = action === 'reveal' && !isDir ? [`/select,"${winPath}"`] : [`"${winPath}"`];
+    const child = spawn('explorer.exe', args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+      windowsVerbatimArguments: true,
+    });
     child.unref();
     return;
   }
